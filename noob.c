@@ -1,8 +1,8 @@
 #include "noob.h"
 
-#define RLBUILD "-Ilib/linux/include -Llib/linux/lib lib/linux/lib/libraylib.a -lGL -lm -lpthread -ldl -lrt -lX11"
+#define RLBUILD "-Ilib/linux/include -Llib -Llib/linux/lib/libraylib.a -lraylib -lGL -lm -lpthread -ldl -lrt -lX11"
 #define WIN_RLBUILD "-Ilib/win/include -Llib/win/lib -lraylib -lopengl32 -lgdi32 -lwinmm -lole32 -luuid -lcomdlg32 -Wno-error=cast-function-type"
-#define CFLAGS "-Wpedantic -Wextra -Werror"
+#define CFLAGS "-Wpedantic -Wextra -Werror -Ilib"
 
 int main(int argc, const char **argv) {
   noob_rebuild_yourself(argc, argv);
@@ -18,9 +18,17 @@ int main(int argc, const char **argv) {
 	noob_run("xxd -i res/cyber.rgs > src/cyber.h");
 	
   if (win) {
-    noob_run("x86_64-w64-mingw32-gcc "CFLAGS" src/tru-masker.c src/tinyfiledialogs.c -o bin/tru-masker.exe "WIN_RLBUILD);
+		if (noob_is_outdated("lib/tinyfiledialogs.c", "lib/tfdwin.o")) {
+			noob_run("x86_64-w64-mingw32-gcc -c lib/tinyfiledialogs.c -o lib/tfdwin.o");
+		}
+		
+    noob_run("x86_64-w64-mingw32-gcc "CFLAGS" src/tru-masker.c lib/tfdwin.o -o bin/tru-masker.exe "WIN_RLBUILD);
   } else {
-    noob_run("cc "CFLAGS" src/tru-masker.c src/tinyfiledialogs.c -o bin/tru-masker "RLBUILD);
+		if (noob_is_outdated("lib/tinyfiledialogs.c", "lib/tfdlinux.o")) {
+			noob_run("gcc -c lib/tinyfiledialogs.c -o lib/tfdlinux.o");
+		}
+		
+    noob_run("cc "CFLAGS" src/tru-masker.c lib/tfdlinux.o -o bin/tru-masker "RLBUILD);
   }
 
   if (noob_has_flag(argc, argv, "run")) {
