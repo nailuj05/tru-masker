@@ -1,68 +1,55 @@
-#include <stdlib.h>
 #include <raylib.h>
+#include "tru-masker.h"
+#include "gridfs.h"
+#include "cyber.h"
+
+#ifdef __linux__
 #include "../noob.h"
-#define RAYGUI_IMPLEMENTATION
-#include "raygui.h"
-#include "tinyfiledialogs.h"
+#endif
 
 #define FONTSIZE 30
 
-Vector2 res = {1000, 1000};
+Vector2 tres, res = {1000, 1000};
+Texture texture = {0};
+RenderTexture2D target = {0};
+int texLoaded = 0;
 
-size_t si = 0;
-Shader shader;
-int last_modified = 0;
-char *shaders[] = {"res/circle.fs", "res/rect.fs", NULL };
+void PrepareTextures(const char* file) {
+	texture = LoadTexture(file);
+	texLoaded = 1;
 
-int MainApp(const char*);
-int GetNextShader();
-void LoadDroppedTex();
-void DoUI(float*, float*);
-void SaveImage(RenderTexture2D *);
-
-int main(int argc, char** argv) {
-	if (argc == 0) exit(1);
-	_noob_set_wdir(argv[0]);
-
-	// Open Image Prolog
-	const char *filterPatterns[] = { "*.png", "*.jpg" };
-	const char *filePath = NULL;
-
-	while(filePath == NULL) {
-		filePath = tinyfd_openFileDialog("Open an image", "", 2, filterPatterns, "png/jpeg", 0);
-	}
-
-	MainApp(filePath);
+	tres = (Vector2){ texture.width, texture.height };	
+	target = LoadRenderTexture(texture.width, texture.height);
 }
 
-int MainApp(const char *imagePath) {
+int main(int argc, const char** argv) {
+	if (argc == 0) exit(1);
+	#ifdef __linux__
+	_noob_set_wdir(argv[0]);
+	#endif
+
 	SetTargetFPS(60);
 	InitWindow(res.x, res.y, "tru-masker");
 	SetWindowState(FLAG_WINDOW_RESIZABLE);
 
-	GuiLoadStyle("res/cyber.rgs");
+	
+	GuiLoadStyleFromMemory((const unsigned char*)res_cyber_rgs, res_cyber_rgs_len);
 	GuiSetStyle(DEFAULT, TEXT_SIZE, FONTSIZE);
 
-	// Load Texture and prepare Render Texture
-	Texture2D texture = LoadTexture(imagePath);
+	// Load and prepare Shaders
 	float size = 0.25f, sharp = 2.0f;
 	int tres_loc, sharp_loc, size_loc;
 	float scale = 1.0;
 
-	Vector2 tres = (Vector2){ texture.width, texture.height };
-	
-	RenderTexture2D target = LoadRenderTexture(texture.width, texture.height);
-	
-	// Load and prepare Shaders
-	shader = LoadShader(0, shaders[si]);
-	Shader grid = LoadShader(0, "res/grid.fs");
+	GetNextShader(1);
+	Shader grid = LoadShaderFromMemory(0, (const char*)res_grid_fs);
 
 	tres_loc = GetShaderLocation(shader, "tres");
 	size_loc = GetShaderLocation(shader, "size");
 	sharp_loc = GetShaderLocation(shader, "sharp");
 	
 	while (!WindowShouldClose()) {
-		GetNextShader();
+		GetNextShader(0);
 
 		// Scaling
 		scale += GetMouseWheelMove() * 0.02f;
@@ -80,13 +67,11 @@ int MainApp(const char *imagePath) {
 		
 		// Draw Shaders
 		BeginDrawing();
-		ClearBackground(BLACK);
 
-		// Grid
-		BeginShaderMode(grid);
-		DrawRectangle(0,0,res.x, res.y, WHITE);
-		EndShaderMode();
+		DrawBackground(grid, res);
 
+		if (!texLoaded) goto defer;
+		
 		// Render to RenderTexture
 		BeginTextureMode(target);
 		BeginShaderMode(shader);
@@ -106,40 +91,32 @@ int MainApp(const char *imagePath) {
 							 (Vector2){0, 0}, 0, WHITE
 									 );
 
-		DoUI(&size, &sharp);
-		SaveImage(&target);
+		defer:
+		DrawControlPanel( &size, &sharp);
+
+		switch (DrawTopBar(res)) {
+		case 1: {
+			const char* file = OpenFileDialog("Open Image", 1);
+			if (file)
+				PrepareTextures(file);
+			break;
+		}
+		case 2: {
+			const char* file = OpenFileDialog("Save Image", 0);
+			if (file)
+				SaveImage(file, &target);
+			break;
+		}
+		}
 		
 		EndDrawing();
 	}
 
 	UnloadShader(shader);
 	UnloadShader(grid);
+	UnloadTexture(texture);
 	UnloadRenderTexture(target);
 	CloseWindow();
 	return 0;
 }
 
-int GetNextShader() {
-	if(IsKeyPressed(KEY_SPACE)) {
-		si = shaders[si + 1] == NULL ? 0 : si + 1;
-		shader = LoadShader(0, shaders[si]);
-		return 1;
-	}
-	return 0;
-}
-
-void DoUI(float *size, float *sharp) {
-	GuiDrawRectangle((Rectangle){10, 10, 360, 91}, 1, BLACK, BLACK);
-	
-	Rectangle r1 = {160, 20, 200, 30};
-	Rectangle r2 = {160, 60, 200, 30};
-	GuiSlider(r1, "Size: ", "", size, 0.0f, 0.75f);
-	GuiSlider(r2, "Shapness: ", "", sharp, 0.1f, 20.0f);
-}
-
-void SaveImage(RenderTexture2D *target) {
-	if (IsKeyPressed(KEY_S)) {
-		Image image = LoadImageFromTexture(target->texture);
-		ExportImage(image, "output.png");
-	}
-}
