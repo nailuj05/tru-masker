@@ -4,3 +4,6 @@ noob
 *.png
 *.jpg
 bin
+
+src/*fs.h
+src/cyber.h
