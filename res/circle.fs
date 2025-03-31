@@ -16,7 +16,7 @@ void main() {
 	uv.x *= aspect;
 
 	vec2 center = vec2(0.5 * aspect, 0.5);
-	float mask = clamp(1 - sharp/size * (distance(center, uv) - size), 0, 1);
+	float mask = 1 - sharp/size * (distance(center, uv) - size);
 
-	finalColor = vec4(texColor.xyz, mask * texColor.w);
+	finalColor = vec4(texColor.xyz, clamp(mask,0,1) * texColor.w);
 }

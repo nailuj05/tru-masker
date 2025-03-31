@@ -23,7 +23,8 @@ int main(int argc, const char **argv) {
 		}
 		
     noob_run("x86_64-w64-mingw32-gcc "CFLAGS" src/tru-masker.c lib/tfdwin.o -o bin/tru-masker.exe "WIN_RLBUILD);
-  } else {
+  }
+	else {
 		if (noob_is_outdated("lib/tinyfiledialogs.c", "lib/tfdlinux.o")) {
 			noob_run("gcc -c lib/tinyfiledialogs.c -o lib/tfdlinux.o");
 		}
@@ -31,7 +32,8 @@ int main(int argc, const char **argv) {
     noob_run("cc "CFLAGS" src/tru-masker.c lib/tfdlinux.o -o bin/tru-masker "RLBUILD);
   }
 
-  if (noob_has_flag(argc, argv, "run")) {
+	// running is not supported (assumes you are on linux) - wine should work fine though
+  if (noob_has_flag(argc, argv, "run") && !win) {
 		noob_run("./bin/tru-masker");
   }
 

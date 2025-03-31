@@ -66,18 +66,19 @@ int main(int argc, const char** argv) {
 		SetShaderValue(shader, sharp_loc, &sharp, SHADER_UNIFORM_FLOAT);
 		
 		// Draw Shaders
-		BeginDrawing();
-
-		DrawBackground(grid, res);
 
 		if (!texLoaded) goto defer;
-		
+	
 		// Render to RenderTexture
 		BeginTextureMode(target);
 		BeginShaderMode(shader);
+		ClearBackground(BLANK);
 		DrawTexture(texture, 0, 0, WHITE);
 		EndShaderMode();
 		EndTextureMode();
+
+		BeginDrawing();
+		DrawBackground(grid, res);
 		
 		float scaledWidth = target.texture.width * scale;
 		float scaledHeight = target.texture.height * scale;

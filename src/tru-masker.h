@@ -26,7 +26,7 @@ int GetNextShader(int force) {
 }
 
 void DrawBackground(Shader grid, Vector2 res) {
-		ClearBackground(BLANK);
+		ClearBackground(BLACK);
 
 		// Grid
 		BeginShaderMode(grid);
