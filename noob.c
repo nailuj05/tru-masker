@@ -7,11 +7,16 @@
 int main(int argc, const char **argv) {
   noob_rebuild_yourself(argc, argv);
 
+	noob_help(argc, argv, "usage: ./noob <win> <run>",
+						"\tbuilds the main executable (linux by default)",
+						"\tadding the \"win\" flag will produce a windows executable when requirements are met",
+						"\tadding the \"run\" flag will execute the binary (on linux only)");
+	
   noob_ensure_dir("bin");
 
 	int win = noob_has_flag(argc, argv, "win");
 
-	// compile shaders and style into executable
+	// compile shaders and style into header so the executable doesn't have to load anything dynamically
 	noob_run("xxd -i res/grid.fs   > src/gridfs.h");
 	noob_run("xxd -i res/circle.fs > src/circlefs.h");
 	noob_run("xxd -i res/rect.fs   > src/rectfs.h");
